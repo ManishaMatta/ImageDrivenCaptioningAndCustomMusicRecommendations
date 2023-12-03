@@ -1,5 +1,5 @@
-import csv
-import os
+# python /Users/Manisha/Documents/MS/SDSU/course/BDA-696/final_project/project/ImageDrivenCaptioningAndCustomMusicRecommendations/dataProcessing/musicProcess.py
+import pickle
 import re
 from pathlib import Path
 
@@ -10,21 +10,24 @@ import subprocess
 import pandas as pd
 import time
 from builtins import *
-from datetime import datetime
-from IPython.display import IFrame
 from bs4 import BeautifulSoup
 from unidecode import unidecode
 import nltk
-from nltk.sentiment import SentimentIntensityAnalyzer
-from wordcloud import WordCloud, STOPWORDS
+from wordcloud import WordCloud
 import gensim
 from gensim.utils import simple_preprocess
 import gensim.corpora as corpora
+from sklearn.neighbors import NearestNeighbors
 from pprint import pprint
 from datetime import datetime
+from gensim.models import LdaModel
 # import textProcess
 #import spotify
 from nltk.corpus import stopwords
+import ast
+
+from common import CommonModule
+
 nltk.download('stopwords')
 
 
@@ -38,20 +41,30 @@ warnings.filterwarnings("ignore")
 
 pd.set_option('display.max_colwidth', None)
 pd.set_option('display.max_columns', None)
+
+
+
 class MusicModule:
     ACCESS_TOKEN = ''
     TOKEN_TIME = ''
     LYRICS_TOPICS = ''
+    LDA_MODEL=''
     id2word=''
+    CURRENT_DATE = datetime.now().strftime("%Y%m%d")
+
 
     @staticmethod
     def generate_bearer_token():
         URL = "https://accounts.spotify.com/api/token"
         HEADER = {'Content-Type': 'application/x-www-form-urlencoded'}
+        # PARAMS = {"grant_type": "client_credentials",
+        #           "client_id": "9d7429fddef847139c8ae837b6bcdd92",
+        #           "client_secret": "75bef32687344efa8a6f2a7e2b4ce132"
+        #           }  # Pic-Melody SDSU id
         PARAMS = {"grant_type": "client_credentials",
-                  "client_id": "9d7429fddef847139c8ae837b6bcdd92",
-                  "client_secret": "75bef32687344efa8a6f2a7e2b4ce132"
-                  }
+                  "client_id": "1bf9921c903e46c2840cc3a8e6c2a08f",
+                  "client_secret": "1cb91975733d4d3f88df044d0cbd460a"
+                  }  # personal id
         MusicModule.TOKEN_TIME = datetime.now().strftime("%Y%m%d%H%M%S")
         response = requests.post(URL, headers=HEADER, data=PARAMS)
         if response.status_code == 200:
@@ -70,9 +83,12 @@ class MusicModule:
 
     @staticmethod
     def spotify_trendy_track(url):
-        time.sleep(30)
+        time.sleep(10)
         command = f"curl --request GET --url '{url}' --header 'Authorization: Bearer {MusicModule.ACCESS_TOKEN}'"
         result = subprocess.check_output(command, shell=True, text=True)
+        if 'error' in list(json.loads(result).keys()):
+            MusicModule.generate_bearer_token()
+            MusicModule.spotify_trendy_track(url)
         return result
 
     @staticmethod
@@ -144,6 +160,7 @@ class MusicModule:
             print("exception", retry_url)
             return url
 
+
     @staticmethod
     def lyric_url(lyric_url):
         if lyric_url == '':
@@ -179,8 +196,10 @@ class MusicModule:
             row_dict['track_instrumentalness'] = data['audio_features'][0]['instrumentalness']
             row_dict['track_liveness'] = data['audio_features'][0]['liveness']
             row_dict['track_tempo'] = data['audio_features'][0]['tempo']
+            row_dict['track_valence'] = data['audio_features'][0]['valence']
             row_dict['track_track_href'] = data['audio_features'][0]['track_href']
         except Exception as e:
+            print(data)
             print(e)
 
 # curl --request GET --url 'https://api.spotify.com/v1/audio-features?ids=1Qrg8KqiBpW07V7PNxwwwL' --header 'Authorization: Bearer BQDhPoOy_kNebEVHtrjY2APhkPDCHgCI7oExIpznJDNvTN0ZHJpNXEVg1OZAyxZ6yVeX3prM_C82M6AT56xn9ROdwUL8XWN6aCNBNTEiELjmD19hB_Y'
@@ -192,7 +211,8 @@ class MusicModule:
         for a_id in artist_id:
             url = "https://api.spotify.com/v1/artists/"+a_id
             data = json.loads(MusicModule.spotify_trendy_track(url))
-            genre_list += data['genres']
+            if 'genres' in list(data.keys()):
+                genre_list += data['genres']
         row_dict['track_genres'] = genre_list
 
     @staticmethod
@@ -216,10 +236,18 @@ class MusicModule:
             data_list.append(data)
             page = data['next']
 
+        #  258 = 100+100+58 = (25*4)+(25*4)+(25*3) = 11 [30-8]
+        # for i in data_list:
+        #     if ('tracks' in i.keys()) and ('items' not in i.keys()):
+        #         print("length: ", len(i['tracks']['items']))
+        #     else:
+        #         print("length: ", len(i['items']))
+
         rows = []
         for i in data_list:
             if ('tracks' in i.keys()) and ('items' not in i.keys()):
                 for j in i['tracks']['items']:
+                    # print("T *********** : ", j['track']['id'])
                     row_dict = base_row_dict.copy()
                     row_dict['track_added_time'] = j['added_at']
                     row_dict['track_id'] = j['track']['id']
@@ -244,6 +272,7 @@ class MusicModule:
             else:
                 for j in i['items']:
                     row_dict = base_row_dict.copy()
+                    print("T *********** : ", j['track']['id'])
                     row_dict['track_added_time'] = j['added_at']
                     row_dict['track_id'] = j['track']['id']
                     row_dict['artist_names'] = [nm['name'] for nm in j['track']['album']['artists']]
@@ -266,67 +295,73 @@ class MusicModule:
                     rows.append(row_dict)
         return pd.DataFrame(rows)
 
+
+    @staticmethod
+    def pre_process(lyrics):
+        if isinstance(lyrics, str):
+            cleaned_lyrics = lyrics.strip().replace('\d+', '')
+            cleaned_lyrics = re.sub('[,\.!?]', '', cleaned_lyrics.lower())
+            return cleaned_lyrics
+        else:
+            print(lyrics)
+
+    @staticmethod
+    def remove_stopwords(texts):
+        return [[word for word in simple_preprocess(str(doc)) if word not in MusicModule.stopwords()] for doc in texts]
+
+    @staticmethod
+    def sent_to_words(sentences):
+        for sentence in sentences:
+            yield gensim.utils.simple_preprocess(str(sentence), deacc=True)
+
     @staticmethod
     def lda_lyrics(spotify_df):
-        def sent_to_words(sentences):
-            for sentence in sentences:
-                yield gensim.utils.simple_preprocess(str(sentence), deacc=True)
-
-        def remove_stopwords(texts):
-            return [[word for word in simple_preprocess(str(doc)) if word not in stop_words] for doc in texts]
-
-        def pre_process(lyrics):
-            if isinstance(lyrics, str):
-                cleaned_lyrics = lyrics.strip().replace('\d+', '')
-                cleaned_lyrics = re.sub('[,\.!?]', '', cleaned_lyrics.lower())
-                return cleaned_lyrics
-            else:
-                print(lyrics)
-
         spotify_df.dropna(subset=['track_lyrics'])
-        spotify_df['track_lyrics_processed'] = spotify_df['track_lyrics'].apply(pre_process)
-        stop_words = stopwords.words('english')
-        stop_words.extend(['i','i\'m','hii','hi','might','even','got','ooh','oh','wanna','na','yeah','would','from', 'to', 'do', 'be', 'in', 'for', 'my', 'how', 'of', 'get', 'know', 'uh', 'ya', 'like', 'iz' ])
+        spotify_df['track_lyrics_processed'] = spotify_df['track_lyrics'].apply(MusicModule.pre_process)
+        spotify_df['track_lyrics_processed_list'] = spotify_df['track_lyrics_processed'].apply(lambda x:MusicModule.remove_stopwords(list(MusicModule.sent_to_words([x]))))
+        spotify_df['track_lyrics'] = spotify_df['track_lyrics'].str.replace('\n', ' ').str.replace('\s+', ' ', regex=True)
+        spotify_df['track_lyrics_processed'] = spotify_df['track_lyrics_processed'].str.replace('\n', ' ').str.replace('\s+', ' ', regex=True)
 
+
+    @staticmethod
+    def lda_model_lyrics(spotify_df):
         data = spotify_df['track_lyrics_processed'].values.tolist()
-        data_words = list(sent_to_words(data))
-        data_words = remove_stopwords(data_words)
+        data_words = list(MusicModule.sent_to_words(data))
+        data_words = MusicModule.remove_stopwords(data_words)
         MusicModule.id2word = corpora.Dictionary(data_words)
         texts = data_words
         corpus = [MusicModule.id2word.doc2bow(text) for text in texts]
         lda_model = gensim.models.LdaModel(corpus=corpus, id2word=MusicModule.id2word, num_topics=10)
-        pprint(lda_model.print_topics())
+        # pprint(lda_model.print_topics())
+        MusicModule.LDA_MODEL = lda_model
         MusicModule.LYRICS_TOPICS = lda_model.print_topics()
+        spotify_df['Bow_Vector'] = spotify_df['track_lyrics_processed_list'].apply(lambda x: [MusicModule.id2word.doc2bow(j) for j in ast.literal_eval(x)])
+        spotify_df['lyrics_topic_distribution'] = spotify_df['Bow_Vector'].apply(lambda x: lda_model[x])
+
+
 
         # @TODO identify/correlate qoutes received with the lyrics[LDA] and filter the needed group lyrics
 
-        spotify_df['track_lyrics_processed_list'] = spotify_df['track_lyrics_processed'].apply(lambda x:remove_stopwords(list(sent_to_words([x]))))
-        spotify_df['Bow_Vector'] = spotify_df['track_lyrics_processed_list'].apply(lambda x: [MusicModule.id2word.doc2bow(j) for j in x])
-        spotify_df['lyrics_topic_distribution'] = spotify_df['Bow_Vector'].apply(lambda x: lda_model[x])
 
-        # @TODO Wordcloud: display for report and store it in first run
-        # spotify_df['track_lyrics_processed'] = spotify_df['track_lyrics'].str.strip().str.replace('\d+', '').map(lambda x: re.sub('[,\.!?]', '', x)).map(lambda x: x.lower())
-        # stop_words = stopwords.words('english')
-        # stopwords_wc = set(STOPWORDS)
-        # stopwords_wc.update(["and", "uh", "hi", "new", "next"])
-        # stop_words.extend(stopwords_wc)
-        long_string = ','.join(list(spotify_df['track_lyrics_processed'].explode()))
-        # ','.join(list(spotify_df['track_genres'].explode().unique()))
-        wordcloud = WordCloud(stopwords=stop_words, background_color="white", max_words=500, contour_width=3, contour_color='steelblue').generate(long_string)
-        # print(list(wordcloud.words_.items())[:10])
-        wordcloud.to_file("resources/pictures/lyrics_word_cloud.png")
-        # @TODO Store once and comment this section
-        spotify_df.drop('track_lyrics_processed_list', axis=1)
-        spotify_df.drop('Bow_Vector', axis=1)
 
-        spotify_df['track_lyrics']=spotify_df['track_lyrics'].str.replace('\n', ' ').str.replace('\s+', ' ', regex=True)
-        spotify_df['track_lyrics_processed']=spotify_df['track_lyrics_processed'].str.replace('\n', ' ').str.replace('\s+', ' ', regex=True)
         # spotify_df['track_lyrics']=spotify_df['track_lyrics'].str.replace('\n', ' ').str.replace('\s+', ' ', regex=True)
     #     track_lyrics|track_lyrics_sentiment|track_lyrics_processed|track_lyrics_processed_list|Bow_Vector|lyrics_topic_distribution
 
+
     @staticmethod
-    def sentiment(line):
-        return SentimentIntensityAnalyzer().polarity_scores(line)
+    def stopwords():
+        # @TODO Wordcloud: display for report and store it in first run
+        stop_words = stopwords.words('english')
+        stop_words.extend(['i','i\'m','hii','hi','might','even','got','ooh','oh','wanna','na','yeah','would','from', 'to', 'do', 'be', 'in', 'for', 'my', 'how', 'of', 'get', 'know', 'uh', 'ya', 'like', 'iz' ])
+        return stop_words
+
+    @staticmethod
+    def wordcloud(spotify_df):
+        long_string = ','.join([lyric for lyric in list(spotify_df['track_lyrics_processed']) if lyric is not None])
+        wordcloud = WordCloud(stopwords=MusicModule.stopwords(), background_color="white", max_words=500, contour_width=3, contour_color='steelblue').generate(long_string)
+        wordcloud.to_file("/Users/Manisha/Documents/MS/SDSU/course/BDA-696/final_project/project/ImageDrivenCaptioningAndCustomMusicRecommendations/resources/pictures/lyrics_word_cloud_TEST.png")
+
+
     @staticmethod
     def sentiment_lyrics(row_dict):
         row_dict['artists'] = MusicModule.lyric_url(row_dict['artist_names'])  # .apply(MusicModule.lyric_url)
@@ -336,7 +371,7 @@ class MusicModule:
         row_dict['artists_track'] = base_url+row_dict['artists']+'-'+row_dict['track_names']+'-'+end_url
         lyrics = []
         new_url = MusicModule.is_valid_link(row_dict['artists_track'])
-        time.sleep(30)
+        time.sleep(10)
         response = requests.get(new_url)
         if response.status_code == 200:
             content = BeautifulSoup(response.text, 'html.parser')
@@ -344,7 +379,7 @@ class MusicModule:
                 lyrics.append(val.text)
             track_lyrics = '\n'.join(lyrics)
             row_dict['track_lyrics'] = track_lyrics
-            row_dict['track_lyrics_sentiment'] = MusicModule.sentiment(track_lyrics)
+            row_dict['track_lyrics_sentiment'] = CommonModule.sentiment(track_lyrics)
         else:
             print("Invalid url", new_url)
             row_dict['track_lyrics'] = np.NAN
@@ -388,33 +423,155 @@ class MusicModule:
 
         return track_lyrics
 
+    # 0 : [0:25] : 1
+    # 0 : [25:50] : 2
+    # 0 : [50:75] : 3
+    # 0 : [75:100] : 4
+    # 1 : [0:25] : 5
+    # 1 : [25:50] : 6
+    # 1 : [50:75] : 7
+    # 1 : [75:100] : 8
+    # 2 : [0:25] : 9
+    # 2 : [25:50] : 10
+    # 2 : [50:75] : 11
+
     @staticmethod
     def join_lyrics_songs():
         # print("************************* ", MusicModule.ACCESS_TOKEN, " *************************")
-        current_date = datetime.now().strftime("%Y%m%d")
-        file_path = Path(f"resources/datasets/music_{current_date}.csv")
-
-        if not file_path.is_file():
+        # file_path = Path(f"resources/datasets/music_{current_date}_0_11.csv")
+        file_path_spotify = Path(f"/Users/Manisha/Documents/MS/SDSU/course/BDA-696/final_project/project/ImageDrivenCaptioningAndCustomMusicRecommendations/"
+                         f"resources/datasets/music_{MusicModule.CURRENT_DATE}_Sample1.csv")
+        if not file_path_spotify.is_file():
             spotify_df = MusicModule.spotify()
             MusicModule.lda_lyrics(spotify_df)
-            spotify_df.to_csv(file_path, sep='|', header='true', index=False)
-            # spotify_df.write.option("sep", "|").option("header","true").csv(file_path)
-            return spotify_df
+            spotify_df.to_csv(file_path_spotify, sep='|', header='true', index=False)
         else:
-            return pd.read_csv(file_path, sep='|', header='infer', skipinitialspace=True)
+            spotify_df = pd.read_csv(file_path_spotify, sep='|', header='infer', skipinitialspace=True)
+        return spotify_df
+        #@TODO add wordcloud and lda after
+        # spotify_df_updt = pd.read_csv(file_path_spotify, sep='|', header='infer', skipinitialspace=True)
+        # MusicModule.lda_lyrics(spotify_df_updt)
+        # pd.DataFrame(MusicModule.LYRICS_TOPICS).to_csv(Path(f"/Users/Manisha/Documents/MS/SDSU/course/BDA-696/final_project/project/ImageDrivenCaptioningAndCustomMusicRecommendations/"
+        #                                                     f"resources/datasets/music_LDA_topics.csv"), index=False)
+        # spotify_df.write.option("sep", "|").option("header","true").csv(file_path)
 
         # print(spotify_df[['track_id', 'track_danceability', 'track_genres', 'track_lyrics_sentiment', 'lyrics_topic_distribution']].head(10))
         # print(spotify_df.columns)
 
-    @staticmethod
-    def music_recommendation(qoute):
-        spotify_df = MusicModule.join_lyrics_songs()
-        # print(spotify_df.head(2))
-        # print(qoute)
+    # @staticmethod
+    # def fun_to_bemovedto_join_lyrics_songs():
+    #     # @todo delete this here and add it to join_lyrics later <check if lda can be addded without this>
+    #     file_path_spotify = Path(f"/Users/Manisha/Documents/MS/SDSU/course/BDA-696/final_project/project/ImageDrivenCaptioningAndCustomMusicRecommendations/"
+    #                              f"resources/datasets/music_20231129_0_11.csv")
+    #     spotify_df_updt = pd.read_csv(file_path_spotify, sep='|', header='infer', skipinitialspace=True)
+    #     MusicModule.lda_lyrics(spotify_df_updt)
+    #     return spotify_df_updt
+    #     # @todo remove comment later
+    #     # file_path_lda = Path(f"/Users/Manisha/Documents/MS/SDSU/course/BDA-696/final_project/project/ImageDrivenCaptioningAndCustomMusicRecommendations/"
+    #     #                      f"resources/datasets/music_20231129_0_11_lda.csv")
+    #     # spotify_df_updt.to_csv(file_path_lda, sep='|', header='true', index=False)
+    #     # MusicModule.wordcloud(spotify_df_updt) @todo remove comment later
 
+    @staticmethod
+    def nearest_neighbors(dataframe,column,target_value,neighbors=10):
+        if len(dataframe) < neighbors:
+            neighbors = len(dataframe)
+        knn_model = NearestNeighbors(n_neighbors=neighbors)
+        knn_model.fit(dataframe[column].values.reshape(-1, 1))
+        distances, indices = knn_model.kneighbors([[target_value]])
+        knn_df = dataframe[column].iloc[indices[0][:neighbors]]
+        knn_df = knn_df.reset_index().rename(columns={'index': 'join_index','caption_sentiment':'caption_sentiment_knn'}).reset_index().rename(columns={'index': 'knn_order'})
+        return pd.merge(dataframe, knn_df, left_index=True, right_on='join_index')
+
+
+
+
+    @staticmethod
+    def caption_parser(spotify_df, caption):
+        # LDA group
+        MusicModule.lda_model_lyrics(spotify_df)
+        # print(lda_model[loaded_id2word.doc2bow(['watch','stop','fire','back','break','started'])])
+        bow = MusicModule.id2word.doc2bow(caption.split())
+        # print(bow)
+        # print(lda_model[bow])
+        # print(lda_model.print_topics())
+        topic_distribution = MusicModule.LDA_MODEL.get_document_topics(bow)
+        most_probable_topic = max(topic_distribution, key=lambda x: x[1])
+        print(f" most probable Topic {most_probable_topic[0]} with probability {most_probable_topic[1]}")
+        if round(most_probable_topic[1].item(), 2) <= 0.1:
+            # similarity score
+
+
+            spotify_df_filter_lda = spotify_df
+        else:
+            spotify_df_filter_lda = spotify_df[spotify_df["lyrics_topic_distribution"].map(lambda x: max(x[0], key=lambda y: y[1])[0]) == most_probable_topic[0]]
+
+        print(len(spotify_df_filter_lda), len(spotify_df))
+        #     if len(spotify_df_filter_lda) == 0:
+        #         spotify_df_filter_lda = spotify_df
+
+        #
+        # for val in MusicModule.LYRICS_TOPICS[most_probable_topic[0]][1].split('+'):
+        #     print((val.split('*')[1].replace("\"",''),float(val.split('*')[0].strip())))
+        # print(spotify_df_updt["lyrics_topic_distribution"].head(5))
+        # spotify_df_filter_lda = spotify_df[spotify_df["lyrics_topic_distribution"].map(lambda x: max(x[0], key=lambda y: y[1])[0]) == most_probable_topic[0]]
+
+        spotify_df_filter_lda = spotify_df
+        # sentiment group
+        senti = CommonModule.sentiment(caption)
+        caption_senti = round(senti['pos']-senti['neg'], 2)
+        spotify_df_filter_lda["caption_sentiment"] = spotify_df_filter_lda["track_lyrics_sentiment"].map(lambda x: round(float(ast.literal_eval(x)['pos'])-float(ast.literal_eval(x)['neg']), 2) if pd.notna(x) else 0)
+        spotify_df_filter_senti = MusicModule.nearest_neighbors(spotify_df_filter_lda, "caption_sentiment", caption_senti)
+        # if len(spotify_df_filter_senti) == 0:
+        #    spotify_df_filter_senti = spotify_df_filter_lda
+        spotify_df_filter_senti=spotify_df
+        # order by  sequences
+        spotify_df_filter_senti.sort_values(by=["track_popularity", "track_valence", "track_danceability","track_energy"],
+                                            ascending=[False, False, False, True])
+
+
+
+        print(spotify_df_filter_senti[["track_name","track_popularity", "track_valence","track_danceability","track_energy","track_loudness","track_liveness","track_genres"]].head(5))
+
+
+
+
+
+
+
+
+        # spotify_df['Bow_Vector'] = spotify_df['track_lyrics_processed_list'].apply(lambda x: [MusicModule.id2word.doc2bow(j) for j in x])
+        # spotify_df['lyrics_topic_distribution'] = spotify_df['Bow_Vector'].apply(lambda x: lda_model[x])
+        #
+        # spotify_df['track_lyrics'] = spotify_df['track_lyrics'].str.replace('\n', ' ').str.replace('\s+', ' ', regex=True)
+        # spotify_df['track_lyrics_processed'] = spotify_df['track_lyrics_processed'].str.replace('\n', ' ').str.replace('\s+', ' ', regex=True)
+
+
+
+    @staticmethod
+    def music_recommendation(caption):
+        spotify_df = MusicModule.join_lyrics_songs()   # @TODO remove this later **********************
+        # file_path_analysis = Path(f"/Users/Manisha/Documents/MS/SDSU/course/BDA-696/final_project/project/ImageDrivenCaptioningAndCustomMusicRecommendations/"
+        #                          f"resources/datasets/music_{MusicModule.CURRENT_DATE}_Sample1.csv")
+        # spotify_df = pd.read_csv(file_path_analysis, sep='|', header='infer', skipinitialspace=True)
+        # print(spotify_df.keys())
+        MusicModule.caption_parser(spotify_df,caption)
 
 
 MusicModule.music_recommendation("Two young guys with shaggy hair look at their hands while hanging out in the yard .")
+# @todo
+# 1. get qoute sentiment
+# 2. find its lda based on the topic
+# 3. select songs in the group
+# 4. based on the sentiment  # addihng L K-nearest neighbor algotithm
+# select liveliness and sound etc
+# 5. give rank by popularity
+# 6. give rank by similarity test with prefered lyrics collum [10]
+# 7. add the ranks
+# 8. find the least ranked song return URL
+        # print(spotify_df.head(2))
+        # print(qoute)
+
 # @todo similarity test, LDA,,sentiment, features, popularity
 
 # Pygame package -> for music recommendation
