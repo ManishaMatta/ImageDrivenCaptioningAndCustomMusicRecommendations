@@ -1,0 +1,10 @@
+.idea/*
+*/*/__pycache__
+*/__pycache__
+__pycache__
+.idea
+.ipynb_checkpoints
+.DS_Store
+*/.DS_Store
+*/*/.DS_Store
+*/*/*/.DS_Store
