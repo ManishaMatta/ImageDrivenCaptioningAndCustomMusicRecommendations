@@ -554,7 +554,7 @@ class MusicModule:
         #                          f"resources/datasets/music_{MusicModule.CURRENT_DATE}_Sample1.csv")
         # spotify_df = pd.read_csv(file_path_analysis, sep='|', header='infer', skipinitialspace=True)
         # print(spotify_df.keys())
-        MusicModule.caption_parser(spotify_df,caption)
+        MusicModule.caption_parser(spotify_df, caption)
 
 
 MusicModule.music_recommendation("Two young guys with shaggy hair look at their hands while hanging out in the yard .")
