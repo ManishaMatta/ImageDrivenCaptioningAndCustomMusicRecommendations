@@ -7,6 +7,7 @@ from nltk.tag import pos_tag
 from nltk.corpus import wordnet
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
+from dataProcessing.common import CommonModule
 
 nltk.download('punkt')
 nltk.download('averaged_perceptron_tagger')
@@ -93,12 +94,11 @@ def process_and_print_quotes(quotes, text_data):
     for i in text_data:
         val = []
         for j in matching_quotes:
-            vectorizer = CountVectorizer()
-            X = vectorizer.fit_transform([i.strip(), j.strip()])
-            cosine_sim = cosine_similarity(X)[0][1]
+            cosine_sim = CommonModule.similarity_score(i.strip(), j.strip())
             val.append((cosine_sim, j.strip(), i.strip()))
         sorted_val_desc = sorted(val, key=lambda x: x[0], reverse=True)
         print(sorted_val_desc[:3])
+
 
 def main():
     txt_df = pd.read_csv(CSV_FILE_PATH, sep='|')
