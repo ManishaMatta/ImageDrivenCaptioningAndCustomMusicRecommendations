@@ -1,3 +1,4 @@
+
 # python /Users/Manisha/Documents/MS/SDSU/course/BDA-696/final_project/project/ImageDrivenCaptioningAndCustomMusicRecommendations/dataProcessing/musicProcess.py
 
 import re
@@ -27,11 +28,6 @@ nltk.download('stopwords')
 warnings.filterwarnings("ignore")
 pd.set_option('display.max_colwidth', None)
 pd.set_option('display.max_columns', None)
-
-
-def music_recommendation(caption):
-    spotify_df = MusicModule.join_lyrics_songs()
-    return MusicModule.caption_parser(spotify_df, caption)
 
 
 class MusicModule:
@@ -317,8 +313,8 @@ class MusicModule:
         return stop_words
 
     @staticmethod
-    def wordcloud(spotify_df):
-        long_string = ','.join([lyric for lyric in list(spotify_df['track_lyrics_processed']) if lyric is not None])
+    def lyrics_wordcloud(spotify_df):
+        long_string = ','.join([lyric for lyric in list(spotify_df['track_lyrics_processed']) if type(lyric) == str])
         wordcloud = WordCloud(stopwords=MusicModule.stopwords(), background_color="white", max_words=500,
                               contour_width=3, contour_color='steelblue').generate(long_string)
         wordcloud.to_file("/Users/Manisha/Documents/MS/SDSU/course/BDA-696/final_project/project"
@@ -376,18 +372,22 @@ class MusicModule:
         # file_path = Path(f"resources/datasets/music_{current_date}_0_11.csv")
         file_path_spotify = Path("/Users/Manisha/Documents/MS/SDSU/course/BDA-696/final_project/project"
                                  "/ImageDrivenCaptioningAndCustomMusicRecommendations/resources/datasets/music_tracks.csv")
+
         if not file_path_spotify.is_file():
             spotify_df = MusicModule.spotify()
             MusicModule.lda_lyrics(spotify_df)
             spotify_df.to_csv(file_path_spotify, sep='|', header='true', index=False)
         else:
             spotify_df = pd.read_csv(file_path_spotify, sep='|', header='infer', skipinitialspace=True)
+            MusicModule.lyrics_wordcloud(spotify_df)  # comment this after 1st execution
         return spotify_df
 
     @staticmethod
     def nearest_neighbors(dataframe, column, target_value, neighbors=20):
-        if len(dataframe) < neighbors:
+        if neighbors > len(dataframe) > 0:
             neighbors = len(dataframe)
+        elif len(dataframe) == 0:
+            return dataframe
         knn_model = NearestNeighbors(n_neighbors=neighbors)
         knn_model.fit(dataframe[column].values.reshape(-1, 1))
         distances, indices = knn_model.kneighbors([[target_value]])
@@ -406,14 +406,11 @@ class MusicModule:
         most_probable_topic = max(topic_distribution, key=lambda x: x[1])
         # print(f" most probable Topic {most_probable_topic[0]} with probability {most_probable_topic[1]}")
         if round(most_probable_topic[1].item(), 2) > 0.1:
-            spotify_df = spotify_df[
-                spotify_df["lyrics_topic_distribution"].map(lambda x: max(x[0], key=lambda y: y[1])[0]) ==
-                most_probable_topic[0]]
+            spotify_df = spotify_df[spotify_df["lyrics_topic_distribution"]
+                                    .map(lambda x: max(x[0], key=lambda y: y[1])[0]) == most_probable_topic[0]]
         # similarity test for the lyrics based on caption
-        spotify_df['track_similarity_score'] = spotify_df['track_lyrics_processed'].map(
-            lambda x: CommonModule.similarity_score(caption.strip(), x.strip()) if type(x) == str else 0.0)
+        spotify_df['track_similarity_score'] = spotify_df['track_lyrics_processed'].map(lambda x: CommonModule.similarity_score(caption.strip(), x.strip()) if type(x) == str else 0.0)
         spotify_df_filter_lda = spotify_df.sort_values(by=["track_similarity_score"], ascending=[False]).head(30)
-
         # sentiment group
         senti = CommonModule.sentiment(caption)
         caption_senti = round(senti['pos'] - senti['neg'], 2)
@@ -434,5 +431,17 @@ class MusicModule:
         display_music['artist_names'] = display_music['artist_names'].map(lambda x: ','.join(ast.literal_eval(x)))
         display_music['track_genres'] = display_music['track_genres'].map(lambda x: ','.join(ast.literal_eval(x)))
         return display_music.to_dict(orient='records')
+
+
+def music_recommendation(caption):
+    spotify_df = MusicModule.join_lyrics_songs()
+    return MusicModule.caption_parser(spotify_df, caption)
+
+
+# print(datetime.now())
+# caption_text1 = "A little girl climbing the stairs to her playhouse"
+# caption_text2 = "Four men on top of a tall structure"
+# music_recommendation(caption_text1+caption_text2)
+# print(datetime.now())
 
 # music_recommendation("Two young guys with shaggy hair look at their hands while hanging out in the yard .")
