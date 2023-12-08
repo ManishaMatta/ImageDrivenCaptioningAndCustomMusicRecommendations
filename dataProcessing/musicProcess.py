@@ -300,7 +300,7 @@ class MusicModule:
         MusicModule.LDA_MODEL = lda_model
         MusicModule.LYRICS_TOPICS = lda_model.print_topics()
         spotify_df['Bow_Vector'] = spotify_df['track_lyrics_processed_list'].apply(
-            lambda x: [MusicModule.id2word.doc2bow(j) for j in ast.literal_eval(x)])
+            lambda x: [MusicModule.id2word.doc2bow(j) for j in ast.literal_eval(x)])  # eval(x)])  # ast.literal_eval(x)])
         spotify_df['lyrics_topic_distribution'] = spotify_df['Bow_Vector'].apply(lambda x: lda_model[x])
 
     @staticmethod
@@ -416,6 +416,7 @@ class MusicModule:
         caption_senti = round(senti['pos'] - senti['neg'], 2)
         spotify_df_filter_lda["caption_sentiment"] = spotify_df_filter_lda["track_lyrics_sentiment"].map(
             lambda x: round(float(ast.literal_eval(x)['pos']) - float(ast.literal_eval(x)['neg']), 2) if pd.notna(
+            # lambda x: round(float(eval(x)['pos']) - float(eval(x)['neg']), 2) if pd.notna(
                 x) else 0)
         spotify_df_filter_senti = MusicModule.nearest_neighbors(spotify_df_filter_lda, "caption_sentiment",
                                                                 caption_senti)
@@ -430,6 +431,9 @@ class MusicModule:
             ['track_name', 'album_name', 'artist_names', 'track_preview_url', 'track_link_spotify', 'track_genres']].head(5)
         display_music['artist_names'] = display_music['artist_names'].map(lambda x: ','.join(ast.literal_eval(x)))
         display_music['track_genres'] = display_music['track_genres'].map(lambda x: ','.join(ast.literal_eval(x)))
+        # display_music['artist_names'] = display_music['artist_names'].map(lambda x: ','.join(eval(x)))
+        # display_music['track_genres'] = display_music['track_genres'].map(lambda x: ','.join(eval(x)))
+
         return display_music.to_dict(orient='records')
 
 
@@ -441,7 +445,7 @@ def music_recommendation(caption):
 # print(datetime.now())
 # caption_text1 = "A little girl climbing the stairs to her playhouse"
 # caption_text2 = "Four men on top of a tall structure"
-# music_recommendation(caption_text1+caption_text2)
+# print(music_recommendation(caption_text1+caption_text2))
 # print(datetime.now())
 
 # music_recommendation("Two young guys with shaggy hair look at their hands while hanging out in the yard .")
