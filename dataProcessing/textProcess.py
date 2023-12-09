@@ -1,3 +1,5 @@
+from datetime import datetime
+
 import pandas as pd
 import nltk
 import requests
@@ -6,6 +8,7 @@ from nltk.tokenize import word_tokenize, sent_tokenize
 from nltk.tag import pos_tag
 from nltk.corpus import wordnet
 from common import CommonModule
+from transformers import AutoTokenizer, TFAutoModelForSeq2SeqLM, AutoModelForSeq2SeqLM
 
 # nltk.download('punkt')
 # nltk.download('averaged_perceptron_tagger')
@@ -25,6 +28,7 @@ headers = {
 }
 quotes = []
 quotes1 = []
+
 
 class TextModule:
     @staticmethod
@@ -89,39 +93,48 @@ class TextModule:
 
     @staticmethod
     def process_and_print_quotes(quotes, text_data):
-        for line in text_data:
-            if isinstance(line, str):
-                sentences = sent_tokenize(line)
-                for sentence in set(sentences):
-                    words = [word for word, tag in pos_tag(word_tokenize(sentence)) if tag.startswith(('VB', 'NN', 'JJ'))]
-                    # print(' '.join(words) + ":")
-                    # print('\n')
-                    keyword_list = words
-                    synonyms = []
-                    for word in keyword_list:
-                        for syn in wordnet.synsets(word):
-                            for lm in syn.lemmas():
-                                synonyms.append(lm.name())
-                    #print(synonyms)
-                    #print('\n')
-                    matching_quotes = [quote for quote in quotes if any(keyword in quote for keyword in synonyms)]
-                    #for quote in matching_quotes:
-                    #print(quote)
-                    #print('\n')
-        for i in text_data:
-            val = []
-            for j in matching_quotes:
-                cosine_sim = CommonModule.similarity_score(i.strip(), j.strip())
-                val.append((cosine_sim, j.strip(), i.strip()))
-            sorted_val_desc = sorted(val, key=lambda x: x[0], reverse=True)
-        return [i[1] for i in sorted_val_desc[:3]]
+        matching_quotes = []
+        if isinstance(text_data, str):
+            words = [word for word, tag in pos_tag(word_tokenize(text_data)) if tag.startswith(('VB', 'NN', 'JJ'))]
+            keyword_list = list(set(words))
+            synonyms = set()
+            for word in keyword_list:
+                for syn in wordnet.synsets(word):
+                    for lm in syn.lemmas():
+                        synonyms.add(lm.name().lower())
+            matching_quotes = [quote for quote in quotes if any(keyword in quote for keyword in synonyms)]
+            if len(matching_quotes) == 0:
+                matching_quotes = quotes
+
+        val = []
+        for quote in matching_quotes:
+            cosine_sim = CommonModule.similarity_score(text_data.strip(), quote.strip())
+            val.append((cosine_sim, quote.strip(), text_data.strip()))
+        sorted_val_desc = sorted(val, key=lambda x: x[0], reverse=True)
+        return (([i[1].replace("\n", '').replace("  ", '') for i in sorted_val_desc[:3]], synonyms))
+
+    # @staticmethod
+    # def hashtag_generator(caption):
+    #     tokenizer = AutoTokenizer.from_pretrained("fabiochiu/t5-base-tag-generation")
+    #     # model1 = TFAutoModelForSeq2SeqLM.from_pretrained("fabiochiu/t5-base-tag-generation")
+    #     model2 = AutoModelForSeq2SeqLM.from_pretrained("fabiochiu/t5-base-tag-generation")
+    #     inputs = tokenizer([caption], max_length=1024, truncation=True, return_tensors="pt")
+    #     all_tags = []  # List to store tags from each iteration
+    #     for i in range(1, 6):
+    #         output = model.generate(**inputs, num_beams=i, do_sample=True, min_length=4,
+    #                                 max_length=100)
+    #         decoded_output = tokenizer.batch_decode(output, skip_special_tokens=True)[0]
+    #         tags = list(set(decoded_output.strip().split(", ")))
+    #         all_tags.extend(tags)  # Append tags from each iteration to the list
+    #
+    #     # Remove duplicate records by converting the list to a set and then back to a list
+    #     all_tags = list(set(all_tags))
+    #
+    #     # Print the final list of unique tags
+    #     print(all_tags)
 
 
 def text_process(caption):
-    # txt_df = pd.read_csv(CSV_FILE_PATH, sep='|')
-    # txt_dt = txt_df[' comment'].head(1)
-    # print(txt_dt)
-    # print('\n')
     caption = caption.replace('startseq','')
 
     '''quotes = scrape_quotes_from_website1(URL1)#scrape from lifewire website
@@ -142,12 +155,13 @@ def text_process(caption):
     fquotes1 = pd.read_csv("/Users/Manisha/Documents/MS/SDSU/course/BDA-696/final_project/project/ImageDrivenCaptioningAndCustomMusicRecommendations/resources/datasets/quotes_output2.csv", sep='|', header='infer',skipinitialspace=True)
     fquotes_dt1 = fquotes1['Quotes']
 
-    # print("Quotes scraped:", len(fquotes_dt))  # Add this to check if quotes were scraped
-    # print("Quotes scraped:", len(fquotes_dt1))
-    # print('\n')
-    text_captions = TextModule.process_and_print_quotes(fquotes_dt, caption)
-    # print('\n')
-    # print('\n')
-    return text_captions+TextModule.process_and_print_quotes(fquotes_dt1, caption)
+    captions1 = TextModule.process_and_print_quotes(fquotes_dt, caption)
+    captions2 = TextModule.process_and_print_quotes(fquotes_dt1, caption)
+    img_captions = captions1[0] + captions2[0]
+    img_synonyms = captions1[1].union(captions2[1])
+    # img_hashtag = TextModule.hashtag_generator(caption)
+    return ((img_captions, img_synonyms))
 
-print(text_process("fishing fishing is through a boat on the water on the boat on the water on the water on the water on the water on the water on the water on the water on the water on the water on the water on the water on the water on the water on the water on the water on the water on the water on the water on the water on the water on the water on the water on the water on"))
+# print(datetime.now())
+# print(text_process("fishing fishing is through a boat on the water on the boat on the water on the water on the water on the water on the water on the water on the water on the water on the water on the water on the water on the water on the water on the water on the water on the water on the water on the water on the water on the water on the water on the water on the water on"))
+# print(datetime.now())

@@ -443,6 +443,7 @@ class ImageModule:
 
 def image_processing(image_path):
     max_length = 82
+    # print(image_path)
     return ImageModule.image_description_generator(image_path, max_length=max_length)
 
 # print(image_processing("/Users/Manisha/Documents/MS/SDSU/course/BDA-696/final_project/project/ImageDrivenCaptioningAndCustomMusicRecommendations/resources/datasets/sample_image.jpg"))

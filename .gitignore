@@ -8,3 +8,7 @@ __pycache__
 */.DS_Store
 */*/.DS_Store
 */*/*/.DS_Store
+dataProcessing/mainApp_2.py
+dataProcessing/mainApp_3.py
+resources/output/images/*.png
+resources/output/images/*.jpg
