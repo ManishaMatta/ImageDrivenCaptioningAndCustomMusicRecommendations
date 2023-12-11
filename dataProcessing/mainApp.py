@@ -45,7 +45,6 @@ with st.form(key='image_form'):
 
 
 if st.session_state['generate_caption_button']:
-
     with st.form(key='caption_form'):
         label = text_process(caption_text)
         caption_radio_val = st.radio(
