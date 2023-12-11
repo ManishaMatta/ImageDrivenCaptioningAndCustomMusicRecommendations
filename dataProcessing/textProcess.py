@@ -8,11 +8,13 @@ from nltk.tokenize import word_tokenize, sent_tokenize
 from nltk.tag import pos_tag
 from nltk.corpus import wordnet
 from common import CommonModule
-from transformers import AutoTokenizer, TFAutoModelForSeq2SeqLM, AutoModelForSeq2SeqLM
+from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
 
 # nltk.download('punkt')
 # nltk.download('averaged_perceptron_tagger')
 # nltk.download('wordnet')
+tokenizer = AutoTokenizer.from_pretrained("fabiochiu/t5-base-tag-generation")
+model = AutoModelForSeq2SeqLM.from_pretrained("fabiochiu/t5-base-tag-generation")
 
 # Configuration variables
 CSV_FILE_PATH = 'C:/Users/sushe/Documents/BDA_Fall_2023/Sem1/BDA_696_Python/Project/sample_text.csv'
@@ -113,25 +115,16 @@ class TextModule:
         sorted_val_desc = sorted(val, key=lambda x: x[0], reverse=True)
         return (([i[1].replace("\n", '').replace("  ", '') for i in sorted_val_desc[:3]], synonyms))
 
-    # @staticmethod
-    # def hashtag_generator(caption):
-    #     tokenizer = AutoTokenizer.from_pretrained("fabiochiu/t5-base-tag-generation")
-    #     # model1 = TFAutoModelForSeq2SeqLM.from_pretrained("fabiochiu/t5-base-tag-generation")
-    #     model2 = AutoModelForSeq2SeqLM.from_pretrained("fabiochiu/t5-base-tag-generation")
-    #     inputs = tokenizer([caption], max_length=1024, truncation=True, return_tensors="pt")
-    #     all_tags = []  # List to store tags from each iteration
-    #     for i in range(1, 6):
-    #         output = model.generate(**inputs, num_beams=i, do_sample=True, min_length=4,
-    #                                 max_length=100)
-    #         decoded_output = tokenizer.batch_decode(output, skip_special_tokens=True)[0]
-    #         tags = list(set(decoded_output.strip().split(", ")))
-    #         all_tags.extend(tags)  # Append tags from each iteration to the list
-    #
-    #     # Remove duplicate records by converting the list to a set and then back to a list
-    #     all_tags = list(set(all_tags))
-    #
-    #     # Print the final list of unique tags
-    #     print(all_tags)
+    @staticmethod
+    def hashtag_generator(caption):
+        inputs = tokenizer([caption], max_length=1024, truncation=True, return_tensors="pt")
+        all_tags = []
+        for i in range(1, 6):
+            output = model.generate(**inputs, num_beams=i, do_sample=True, min_length=4, max_length=100)
+            decoded_output = tokenizer.batch_decode(output, skip_special_tokens=True)[0]
+            tags = list(set(decoded_output.strip().split(", ")))
+            all_tags.extend(tags)  # Append tags from each iteration to the list
+        return set(all_tags)
 
 
 def text_process(caption):
@@ -159,8 +152,8 @@ def text_process(caption):
     captions2 = TextModule.process_and_print_quotes(fquotes_dt1, caption)
     img_captions = captions1[0] + captions2[0]
     img_synonyms = captions1[1].union(captions2[1])
-    # img_hashtag = TextModule.hashtag_generator(caption)
-    return ((img_captions, img_synonyms))
+    img_hashtag = TextModule.hashtag_generator(caption)
+    return ((img_captions, img_synonyms.union(img_hashtag)))
 
 # print(datetime.now())
 # print(text_process("fishing fishing is through a boat on the water on the boat on the water on the water on the water on the water on the water on the water on the water on the water on the water on the water on the water on the water on the water on the water on the water on the water on the water on the water on the water on the water on the water on the water on the water on"))
