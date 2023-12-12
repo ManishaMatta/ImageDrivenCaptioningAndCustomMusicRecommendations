@@ -35,11 +35,10 @@ with st.form(key='image_form'):
         temp_dir = tempfile.mkdtemp()
         path = os.path.join(temp_dir, uploaded_file.name)
         image_uploaded = st.image(uploaded_file)
-        st.write(path)
-        output_image_path="/Users/Manisha/Documents/MS/SDSU/course/BDA-696/final_project/project/ImageDrivenCaptioningAndCustomMusicRecommendations/resources/output/images/"+uploaded_file.name
-        with open(os.path.join(output_image_path), "wb") as f:
+        # output_image_path="/Users/Manisha/Documents/MS/SDSU/course/BDA-696/final_project/project/ImageDrivenCaptioningAndCustomMusicRecommendations/resources/output/images/"+uploaded_file.name
+        with open(os.path.join(path), "wb") as f:
             f.write(uploaded_file.getbuffer())
-        caption_text = image_processing(output_image_path)
+        caption_text = image_processing(path)
     generate_caption_button = st.form_submit_button(label='Generate Captions')
     if generate_caption_button:
         st.session_state['generate_caption_button'] = True
