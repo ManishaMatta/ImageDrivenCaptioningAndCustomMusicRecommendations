@@ -50,7 +50,6 @@ markdown-it-py
 MarkupSafe
 matplotlib
 mdurl
-mkl-fft
 mkl-random
 mkl-service
 mpmath
