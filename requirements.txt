@@ -50,8 +50,6 @@ markdown-it-py
 MarkupSafe
 matplotlib
 mdurl
-mkl-random
-mkl-service
 mpmath
 multidict
 networkx
