@@ -16,6 +16,8 @@ st.title('Image Driven Captioning And Custom Music Recommendations', anchor="Pic
 st.caption("BDA-696 Course")
 caption_text = 'Image Driven Captioning And Custom Music Recommendations'
 
+st.session_state.setdefault('hashtag_multiselect', [])
+
 if 'generate_caption_button' not in st.session_state:
     st.session_state['generate_caption_button'] = False
 
@@ -25,9 +27,22 @@ if 'generate_music_button' not in st.session_state:
 if 'get_song_button' not in st.session_state:
     st.session_state['get_song_button'] = False
 
+if 'caption_radio' not in st.session_state:
+    st.session_state['caption_radio'] = ''
+
+if 'hashtag_multiselect' not in st.session_state:
+    st.session_state.hashtag_multiselect = []
+
+if 'song_radio' not in st.session_state:
+    st.session_state['song_radio'] = ''
+
 @st.cache_data(experimental_allow_widgets=True)
 def get_details(caption):
     return music_recommendation(caption)
+
+@st.cache_data(experimental_allow_widgets=True)
+def get_cap_details(caption_text):
+    return text_process(caption_text)
 
 with st.form(key='image_form'):
     uploaded_file = st.file_uploader("**Choose an Image**")
@@ -46,7 +61,7 @@ with st.form(key='image_form'):
 
 if st.session_state['generate_caption_button']:
     with st.form(key='caption_form'):
-        label = text_process(caption_text)
+        label = get_cap_details(caption_text)
         caption_radio_val = st.radio(
             '**Captions Generated**',
             key="caption_radio",
@@ -61,7 +76,6 @@ if st.session_state['generate_caption_button']:
 if st.session_state['generate_music_button']:
     with st.form(key='music_form'):
         caption_dict = get_details(caption_text)
-        # print(caption_dict)
         song_radio = st.radio("**Music Recommended**",  options=[tn['track_name']+" : "+tn['album_name'] for tn in caption_dict], key="song_radio")
         get_song_button = st.form_submit_button(label='Get Song')
         if get_song_button:

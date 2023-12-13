@@ -113,7 +113,7 @@ class TextModule:
             cosine_sim = CommonModule.similarity_score(text_data.strip(), quote.strip())
             val.append((cosine_sim, quote.strip(), text_data.strip()))
         sorted_val_desc = sorted(val, key=lambda x: x[0], reverse=True)
-        return (([i[1].replace("\n", '').replace("  ", '') for i in sorted_val_desc[:3]], synonyms))
+        return (([i[1].replace("\n", '').replace("  ", '') for i in sorted_val_desc[:4]], synonyms))
 
     @staticmethod
     def hashtag_generator(caption):
@@ -153,7 +153,8 @@ def text_process(caption):
     img_captions = captions1[0] + captions2[0]
     img_synonyms = captions1[1].union(captions2[1])
     img_hashtag = TextModule.hashtag_generator(caption)
-    return ((img_captions, img_synonyms.union(img_hashtag)))
+    hashtags = img_synonyms.union(img_hashtag)
+    return ((img_captions[:5], list(hashtags)))
 
 # print(datetime.now())
 # print(text_process("fishing fishing is through a boat on the water on the boat on the water on the water on the water on the water on the water on the water on the water on the water on the water on the water on the water on the water on the water on the water on the water on the water on the water on the water on the water on the water on the water on the water on the water on"))
