@@ -11,6 +11,7 @@ gensim
 nltk
 numpy
 pydeck
+pandas
 regex
 requests
 urllib3
@@ -18,11 +19,11 @@ tqdm
 scikit-learn
 scipy
 setuptools
-huggingface-hub
 streamlit
 Unidecode
 validators
 transformers
+huggingface-hub
 
 
 
