@@ -1,5 +1,5 @@
 # streamlit run /Users/Manisha/Documents/MS/SDSU/course/BDA-696/final_project/project/ImageDrivenCaptioningAndCustomMusicRecommendations/dataProcessing/mainApp.py
-
+# Link: https://imagedrivencaptioningandcustommusicrecommendations-bda696.streamlit.app/
 import os
 
 import streamlit as st
@@ -50,7 +50,7 @@ with st.form(key='image_form'):
         temp_dir = tempfile.mkdtemp()
         path = os.path.join(temp_dir, uploaded_file.name)
         image_uploaded = st.image(uploaded_file)
-        output_image_path="/Users/Manisha/Documents/MS/SDSU/course/BDA-696/final_project/project/ImageDrivenCaptioningAndCustomMusicRecommendations/resources/output/images/"+uploaded_file.name
+        output_image_path="/mount/src/ImageDrivenCaptioningAndCustomMusicRecommendations/resources/output/"+uploaded_file.name
         with open(os.path.join(output_image_path), "wb") as f:
             f.write(uploaded_file.getbuffer())
         caption_text = image_processing(output_image_path)

@@ -370,8 +370,7 @@ class MusicModule:
     @staticmethod
     def join_lyrics_songs():
         # file_path = Path(f"resources/datasets/music_{current_date}_0_11.csv")
-        file_path_spotify = Path("/Users/Manisha/Documents/MS/SDSU/course/BDA-696/final_project/project"
-                                 "/ImageDrivenCaptioningAndCustomMusicRecommendations/resources/datasets/music_tracks.csv")
+        file_path_spotify = Path("/mount/src/ImageDrivenCaptioningAndCustomMusicRecommendations/resources/datasets/music_tracks.csv")
 
         if not file_path_spotify.is_file():
             spotify_df = MusicModule.spotify()

@@ -143,9 +143,9 @@ def text_process(caption):
     output_file_path1 = "C:/Users/sushe/Documents/BDA_Fall_2023/quotes_output2.csv"
     df_quotes1.to_csv(output_file_path1, sep='|', header=True, index=False)'''
 
-    fquotes = pd.read_csv("/Users/Manisha/Documents/MS/SDSU/course/BDA-696/final_project/project/ImageDrivenCaptioningAndCustomMusicRecommendations/resources/datasets/quotes_output1.csv", sep='|', header='infer',skipinitialspace=True)
+    fquotes = pd.read_csv("/mount/src/ImageDrivenCaptioningAndCustomMusicRecommendations/resources/datasets/quotes_output1.csv", sep='|', header='infer',skipinitialspace=True)
     fquotes_dt = fquotes['Quotes']
-    fquotes1 = pd.read_csv("/Users/Manisha/Documents/MS/SDSU/course/BDA-696/final_project/project/ImageDrivenCaptioningAndCustomMusicRecommendations/resources/datasets/quotes_output2.csv", sep='|', header='infer',skipinitialspace=True)
+    fquotes1 = pd.read_csv("/mount/src/ImageDrivenCaptioningAndCustomMusicRecommendations/resources/datasets/quotes_output2.csv", sep='|', header='infer',skipinitialspace=True)
     fquotes_dt1 = fquotes1['Quotes']
 
     captions1 = TextModule.process_and_print_quotes(fquotes_dt, caption)
