@@ -31,17 +31,12 @@ class ImageModule:
         n = 0
         while 1:
             for Image_id in Images_set:
-                # print('image_id:', Image_id)
-                # print(features[Image_id].shape)
                 n += 1
                 captions = caption_map[Image_id]
-                # print(captions)
                 # process each caption
                 for caption in captions:
                     # encode the sequence
                     seq = tokenizer.texts_to_sequences([caption])[0]
-                    #  print(caption)
-                    # print(seq)
                     # split the sequence into X, y pairs
                     for i in range(1, len(seq)):
                         # split into input and output pairs
@@ -51,19 +46,13 @@ class ImageModule:
                         # encode output sequence
                         out_seq = to_categorical([out_seq],
                                                  num_classes=vocab_size)[0]
-                        # store the sequences
-                        # print(features[Image_id][0])
-
                         X1.append(features[Image_id])
-                        # print('features size:', features[Image_id].shape)
-                        # print('feature size array', np.array(X1).shape)
                         X2.append(in_seq)
                         y.append(out_seq)
                         if i > 3: break
                         if n == batch_size:
                             X1, X2, y = np.array(X1), np.array(X2), np.array(y)
                             yield [X1, X2], y
-                            # print(X1.shape, X2.shape, y.shape)
                             X1, X2, y = list(), list(), list()
                             n = 0
                             # break
@@ -89,14 +78,8 @@ class ImageModule:
     def load_features(base_dir):
 
         dir_feature = os.path.join(base_dir, 'features')  # Saving pkl object in base directory
-        # os.mkdir(dir_feature)
-        # Store features in pickle object
-        # pickle.dump(features,open(os.path.join(dir_feature,'features.pkl'),'wb'))
-        # load features from pickle
         with open(os.path.join(dir_feature, 'features.pkl'), 'rb') as f:
             features = pickle.load(f)
-        # print(len(features))
-        # features['1000092795'].shape
         return features
 
     @staticmethod
@@ -147,20 +130,16 @@ class ImageModule:
 
             # Concatenate 10 numpy array's in image_list
             image_batch = np.concatenate(image_list, axis=0)
-            # print(image_batch.shape)
 
             # Preprocess image for vgg
             image = preprocess_input(image_batch)
             # Extract feature of an image
             feature = ImageModule.model_vgg.predict(image, verbose=0)
-            # print(feature.shape) 10*4096
-            # print(Imageid_list) list of 10 image ids
             # store feature
             for k, row in enumerate(feature):
                 features[Imageid_list[k]] = row
 
         dir_feature = os.path.join(base_dir, 'features')  # Saving pkl object in base directory
-        # os.mkdir(dir_feature)
         # Store features in pickle object
         pickle.dump(features, open(os.path.join(dir_feature, 'features.pkl'), 'wb'))
         return
@@ -353,12 +332,7 @@ class ImageModule:
         # Train the model
         epochs = 50
         batch_size = 64
-        # print(len(train))
         steps = len(train) // batch_size  # After each step it will do bakcpropagation and fetch the data
-        # for i in range (epochs):
-        #   generator= data_loader(train,caption_map,features,tokenizer,max_length,vocab_size,batch_size)
-        #   #fit for one epoch
-        #   model.fit(generator, epochs=1, steps_per_epoch=steps, verbose=1)
 
         generator = ImageModule.data_loader(train, caption_map, features, tokenizer, max_length, vocab_size, batch_size)
         val_generator = ImageModule.data_loader(val, caption_map, features, tokenizer, max_length, vocab_size,

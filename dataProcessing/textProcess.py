@@ -10,9 +10,9 @@ from nltk.corpus import wordnet
 from common import CommonModule
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
 
-nltk.download('punkt')
-nltk.download('averaged_perceptron_tagger')
-nltk.download('wordnet')
+# nltk.download('punkt')
+# nltk.download('averaged_perceptron_tagger')
+# nltk.download('wordnet')
 tokenizer = AutoTokenizer.from_pretrained("fabiochiu/t5-base-tag-generation")
 model = AutoModelForSeq2SeqLM.from_pretrained("fabiochiu/t5-base-tag-generation")
 
@@ -21,7 +21,6 @@ CSV_FILE_PATH = 'C:/Users/sushe/Documents/BDA_Fall_2023/Sem1/BDA_696_Python/Proj
 BASE_URL1 = "https://www.lifewire.com"
 BASE_URL2 = "https://www.oberlo.com"
 QUOTES_CLASS = "comp mntl-sc-block mntl-sc-block-html"
-#QUOTES_CLASS = "my-12 md:px-24"
 URL1 = f"{BASE_URL1}/best-instagram-captions-4171697"
 URL2 = f"{BASE_URL2}/blog/instagram-captions"
 headers = {
@@ -35,7 +34,6 @@ quotes1 = []
 class TextModule:
     @staticmethod
     def scrape_quotes_from_website1(url):
-        #quotes = []
         response = requests.get(url)
         if response.status_code == 200:
             soup = BeautifulSoup(response.content, "html.parser")
@@ -47,7 +45,6 @@ class TextModule:
 
     @staticmethod
     def scrape_quotes_from_website1(url):
-        #quotes = []
         response = requests.get(url)
         if response.status_code == 200:
             soup = BeautifulSoup(response.content, "html.parser")
@@ -59,12 +56,10 @@ class TextModule:
 
     @staticmethod
     def scrape_quotes_from_website2(url):
-        #quotes = []
         response = requests.get(url)
         response.status_code
         content = BeautifulSoup(response.text, 'html.parser')
         for i in content.find_all("li", style="font-weight: 400;"):
-            #print(i.get_text())
             quotes.append(i.get_text())
         return quotes
 

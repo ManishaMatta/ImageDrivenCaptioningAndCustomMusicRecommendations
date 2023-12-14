@@ -1,4 +1,3 @@
-
 # python /Users/Manisha/Documents/MS/SDSU/course/BDA-696/final_project/project/ImageDrivenCaptioningAndCustomMusicRecommendations/dataProcessing/musicProcess.py
 
 import re
@@ -24,7 +23,7 @@ import ast
 from common import CommonModule
 import warnings
 
-nltk.download('stopwords')
+# nltk.download('stopwords')
 warnings.filterwarnings("ignore")
 pd.set_option('display.max_colwidth', None)
 pd.set_option('display.max_columns', None)
@@ -296,7 +295,6 @@ class MusicModule:
         texts = data_words
         corpus = [MusicModule.id2word.doc2bow(text) for text in texts]
         lda_model = gensim.models.LdaModel(corpus=corpus, id2word=MusicModule.id2word, num_topics=10)
-        # pprint(lda_model.print_topics())
         MusicModule.LDA_MODEL = lda_model
         MusicModule.LYRICS_TOPICS = lda_model.print_topics()
         spotify_df['Bow_Vector'] = spotify_df['track_lyrics_processed_list'].apply(
@@ -370,7 +368,7 @@ class MusicModule:
     @staticmethod
     def join_lyrics_songs():
         # file_path = Path(f"resources/datasets/music_{current_date}_0_11.csv")
-        file_path_spotify = Path("/mount/src/imagedrivencaptioningandcustommusicrecommendations/resources/datasets/music_tracks.csv")
+        file_path_spotify = Path("/Users/Manisha/Documents/MS/SDSU/course/BDA-696/final_project/project/ImageDrivenCaptioningAndCustomMusicRecommendations/resources/datasets/music_tracks.csv")
 
         if not file_path_spotify.is_file():
             spotify_df = MusicModule.spotify()
@@ -430,9 +428,6 @@ class MusicModule:
             ['track_name', 'album_name', 'artist_names', 'track_preview_url', 'track_link_spotify', 'track_genres']].head(5)
         display_music['artist_names'] = display_music['artist_names'].map(lambda x: ','.join(ast.literal_eval(x)))
         display_music['track_genres'] = display_music['track_genres'].map(lambda x: ','.join(ast.literal_eval(x)))
-        # display_music['artist_names'] = display_music['artist_names'].map(lambda x: ','.join(eval(x)))
-        # display_music['track_genres'] = display_music['track_genres'].map(lambda x: ','.join(eval(x)))
-
         return display_music.to_dict(orient='records')
 
 

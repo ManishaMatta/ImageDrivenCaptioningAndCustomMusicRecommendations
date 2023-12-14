@@ -10,5 +10,6 @@ __pycache__
 */*/*/.DS_Store
 dataProcessing/mainApp_2.py
 dataProcessing/mainApp_3.py
-resources/output/images/*.png
-resources/output/images/*.jpg
+resources/output/*.jpg
+resources/output/*.png
+resources/pictures/lyrics_wordcloud.png

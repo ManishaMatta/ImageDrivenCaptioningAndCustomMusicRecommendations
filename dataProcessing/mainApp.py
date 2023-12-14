@@ -12,7 +12,6 @@ from textProcess import text_process
 from musicProcess import music_recommendation
 
 st.set_page_config(page_title='PicMelody', layout='centered', page_icon='logo2.png', initial_sidebar_state='auto')
-# st.set_page_config(layout="wide")
 st.title('Image Driven Captioning And Custom Music Recommendations', anchor="PicMelody", help='https://github.com/ManishaMatta/ImageDrivenCaptioningAndCustomMusicRecommendations')
 st.caption("BDA-696 Course")
 caption_text = 'Image Driven Captioning And Custom Music Recommendations'
@@ -55,7 +54,6 @@ def get_cap_details(caption_text):
 # st.write([i for i in Path("/mount/src/imagedrivencaptioningandcustommusicrecommendations/resources/output/").iterdir() if i.is_file()])
 # st.write([i for i in Path("/mount/src/imagedrivencaptioningandcustommusicrecommendations/resources/model/").iterdir() if i.is_file()])
 # # st.write(os.listdir('/mount/src'))
-
 
 with st.form(key='image_form'):
     uploaded_file = st.file_uploader("**Choose an Image**")
