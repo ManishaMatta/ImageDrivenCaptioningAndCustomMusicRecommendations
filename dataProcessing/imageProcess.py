@@ -416,7 +416,7 @@ class ImageModule:
     def image_description_generator(image_path, max_length=82):
         # from keras.models import load_model #to load saved lstm model
         model_lstm = load_model(
-            '/mount/src/ImageDrivenCaptioningAndCustomMusicRecommendations/resources/model/lstm_model.h5')
+            '/mount/src/imagedrivencaptioningandcustommusicrecommendations/resources/model/lstm_model.h5')
         # Testing with real Image
         vgg_model = VGG16()
         # restructure the model
@@ -434,7 +434,7 @@ class ImageModule:
         feature = vgg_model.predict(image, verbose=0)  # np.expand_dims(features[image_id], axis=0)#
         # load tokenizer from pickle file
         with open(
-                '/mount/src/ImageDrivenCaptioningAndCustomMusicRecommendations/resources/model/tokenizer2.pkl',
+                '/mount/src/imagedrivencaptioningandcustommusicrecommendations/resources/model/tokenizer2.pkl',
                 'rb') as f:
             tokenizer = pickle.load(f)
         # predict from the trained model
