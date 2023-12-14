@@ -1,7 +1,8 @@
 # streamlit run /Users/Manisha/Documents/MS/SDSU/course/BDA-696/final_project/project/ImageDrivenCaptioningAndCustomMusicRecommendations/dataProcessing/mainApp.py
 # Link: https://imagedrivencaptioningandcustommusicrecommendations-bda696.streamlit.app/
-import os
 
+import os
+from pathlib import Path
 import streamlit as st
 import tempfile
 import numpy as np
@@ -43,6 +44,11 @@ def get_details(caption):
 @st.cache_data(experimental_allow_widgets=True)
 def get_cap_details(caption_text):
     return text_process(caption_text)
+
+st.write(__file__)
+st.write(os.path.realpath(__file__))
+st.write(os.path.dirname(os.path.realpath(__file__)))
+st.write(Path.cwd())
 
 with st.form(key='image_form'):
     uploaded_file = st.file_uploader("**Choose an Image**")
