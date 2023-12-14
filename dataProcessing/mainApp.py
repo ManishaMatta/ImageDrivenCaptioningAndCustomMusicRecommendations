@@ -50,7 +50,9 @@ st.write(os.path.realpath(__file__))
 st.write(os.path.dirname(os.path.realpath(__file__)))
 st.write(Path.cwd())
 # st.write(Path.iterdir("."))
-st.write(os.listdir('/mount/src'))
+from pathlib import Path
+st.write(Path(".").iterdir())
+# st.write(os.listdir('/mount/src'))
 
 with st.form(key='image_form'):
     uploaded_file = st.file_uploader("**Choose an Image**")
