@@ -22,7 +22,7 @@ huggingface-hub
 streamlit
 Unidecode
 validators
-
+transformers
 
 
 
