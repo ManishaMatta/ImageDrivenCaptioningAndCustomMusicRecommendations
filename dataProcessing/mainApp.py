@@ -45,16 +45,17 @@ def get_details(caption):
 def get_cap_details(caption_text):
     return text_process(caption_text)
 
-st.write(__file__)
-st.write(os.path.realpath(__file__))
-st.write(os.path.dirname(os.path.realpath(__file__)))
-st.write(Path.cwd())
+# st.write(__file__)
+# st.write(os.path.realpath(__file__))
+# st.write(os.path.dirname(os.path.realpath(__file__)))
+# st.write(Path.cwd())
 # st.write(Path.iterdir("."))
-from pathlib import Path
-st.write([i for i in Path(".").iterdir() if i.is_file()])
-st.write([i for i in Path("/mount/src/imagedrivencaptioningandcustommusicrecommendations/resources/output/").iterdir() if i.is_file()])
-st.write([i for i in Path("/mount/src/imagedrivencaptioningandcustommusicrecommendations/resources/model/").iterdir() if i.is_file()])
-# st.write(os.listdir('/mount/src'))
+# from pathlib import Path
+# st.write([i for i in Path(".").iterdir() if i.is_file()])
+# st.write([i for i in Path("/mount/src/imagedrivencaptioningandcustommusicrecommendations/resources/output/").iterdir() if i.is_file()])
+# st.write([i for i in Path("/mount/src/imagedrivencaptioningandcustommusicrecommendations/resources/model/").iterdir() if i.is_file()])
+# # st.write(os.listdir('/mount/src'))
+
 
 with st.form(key='image_form'):
     uploaded_file = st.file_uploader("**Choose an Image**")
@@ -62,7 +63,7 @@ with st.form(key='image_form'):
         temp_dir = tempfile.mkdtemp()
         path = os.path.join(temp_dir, uploaded_file.name)
         image_uploaded = st.image(uploaded_file)
-        output_image_path="/mount/src/imagedrivencaptioningandcustommusicrecommendations/resources/output/"+uploaded_file.name
+        output_image_path="/Users/Manisha/Documents/MS/SDSU/course/BDA-696/final_project/project/ImageDrivenCaptioningAndCustomMusicRecommendations/resources/output/"+uploaded_file.name
         with open(os.path.join(output_image_path), "wb") as f:
             f.write(uploaded_file.getbuffer())
         caption_text = image_processing(output_image_path)
