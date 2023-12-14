@@ -10,9 +10,9 @@ from nltk.corpus import wordnet
 from common import CommonModule
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
 
-# nltk.download('punkt')
-# nltk.download('averaged_perceptron_tagger')
-# nltk.download('wordnet')
+nltk.download('punkt')
+nltk.download('averaged_perceptron_tagger')
+nltk.download('wordnet')
 tokenizer = AutoTokenizer.from_pretrained("fabiochiu/t5-base-tag-generation")
 model = AutoModelForSeq2SeqLM.from_pretrained("fabiochiu/t5-base-tag-generation")
 
