@@ -52,7 +52,8 @@ st.write(Path.cwd())
 # st.write(Path.iterdir("."))
 from pathlib import Path
 st.write([i for i in Path(".").iterdir() if i.is_file()])
-st.write([i for i in Path("/mount/src/imagedrivencaptioningandcustommusicrecommendations/resources/").iterdir() if i.is_file()])
+st.write([i for i in Path("/mount/src/imagedrivencaptioningandcustommusicrecommendations/resources/output/").iterdir() if i.is_file()])
+st.write([i for i in Path("/mount/src/imagedrivencaptioningandcustommusicrecommendations/resources/model/").iterdir() if i.is_file()])
 # st.write(os.listdir('/mount/src'))
 
 with st.form(key='image_form'):
