@@ -1,6 +1,14 @@
 # ImageDrivenCaptioningAndCustomMusicRecommendations
 BDA696: Image-Driven Captioning and Custom Music Recommendations (final project)
 
+### Members
+@ManishaMatta
+@Sabnam-Pandit
+@chebrolu6405
+@anurima-saha
+
+
+
 ### Objective
 The project aims to integrate captions and music with images to enhance social networking experiences. 
 We aim to develop an Image Captioning and Music Recommendation System which accepts images as input and produces platform suitable captions and music as output. 
